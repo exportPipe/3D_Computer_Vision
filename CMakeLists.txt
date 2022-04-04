@@ -1,0 +1,5 @@
+project(Exercise1.pro)
+find_package(Qt5Widgets REQUIRED)
+set(SOURCE_FILE main.cpp)
+add_executable(Exercise1.pro ${SOURCE_FILES})
+target_link_libraries(Exercise1.pro Qt5::Widgets)
