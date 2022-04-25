@@ -90,7 +90,7 @@ private:
                       QVector3D rotation, QVector4D principle_point);
 
   void initProjection(std::vector<QVector3D> object, std::vector<QVector3D> &projection, float focal_length,
-                      QVector4D center, QVector4D principle_point, QVector3D rotation);
+                      QVector4D center, QVector3D rotation);
 
   QVector3D centralProjection(float focal_length, QVector3D vertex, QVector3D center, QVector3D rotation);
 

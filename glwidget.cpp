@@ -83,10 +83,17 @@ QMatrix4x4 rotate_x(float angle)
     float degrees = angle * M_PI / 180;
     float cos = cosf(degrees);
     float sin = sinf(degrees);
+    /**
     QVector4D v1 = QVector4D(1, 0, 0, 0);
     QVector4D v2 = QVector4D(sin, cos, 0, 0);
     QVector4D v3 = QVector4D(0, 0, 1, 0);
     QVector4D v4 = QVector4D(0, 0, 0, 1);
+    **/
+    QVector4D v1 = QVector4D(1, 0, 0, 0);
+    QVector4D v2 = QVector4D(0, cos, -sin, 0);
+    QVector4D v3 = QVector4D(0, sin, cos, 0);
+    QVector4D v4 = QVector4D(0, 0, 0, 1);
+
     QMatrix4x4 rotation_matrix;
     rotation_matrix.setToIdentity();
     rotation_matrix.setColumn(0, v1);
@@ -172,10 +179,10 @@ void GLWidget::paintGL()
     // Draw here your objects as in drawFrameAxis()
     vector<QVector3D> object1;
     vector<QVector3D> object2;
-    QVector4D object1_position = QVector4D(0.0, 0.0, 8.0, 1.0);
-    QVector4D object2_position = QVector4D(1.0, 1.0, 6.0, 1.0);
-    initCuboid(object1, object1_position, 0.8, 0.0, 50.0, 0.0);
-    initCuboid(object2, object2_position, 1.2, 50.0, 0.0, 0.0);
+    QVector4D object1_position = QVector4D(-1.0, 0.0, 8.0, 1.0);
+    QVector4D object2_position = QVector4D(4.0, 1.0, 5.0, 1.0);
+    initCuboid(object1, object1_position, 0.5, 0.0, 50.0, 0.0);
+    initCuboid(object2, object2_position, 1.0, 0.0, 50.0, 0.0);
 
     QColor red = QColor(1.0f, 0.0f, 0.0f);
     QColor green = QColor(0.0f, 1.0f, 0.0f);
@@ -192,11 +199,11 @@ void GLWidget::paintGL()
     vector<QVector3D> camera_axes;
     QVector4D camera_position = QVector4D(1, 1, 1, 1);
 
-    float focal_distance = 2.0;
+    float focal_distance = 1.5;
     float image_plane_size = 2.5;
 
     // camera orientation
-    QVector3D camera_rotation = QVector3D(0, 0, 0);
+    QVector3D camera_rotation = QVector3D(30, 0, 0);
 
     // distance from camera position orthogonal to image plane
     QVector4D principle_point = getPrinciplePoint(focal_distance, camera_position, camera_rotation);
@@ -214,14 +221,12 @@ void GLWidget::paintGL()
     drawObject(image_plane_axes, red);
 
 
-
-
     // Assignement 1, Part 3
     // Draw here the perspective projection
     vector<QVector3D> object1_projection;
     vector<QVector3D> object2_projection;
-    initProjection(object1, object1_projection, focal_distance, camera_position, principle_point, camera_rotation);
-    initProjection(object2, object2_projection, focal_distance, camera_position, principle_point, camera_rotation);
+    initProjection(object1, object1_projection, focal_distance, camera_position, camera_rotation);
+    initProjection(object2, object2_projection, focal_distance, camera_position, camera_rotation);
     drawObject(object1_projection, red);
     drawObject(object2_projection, green);
 
@@ -621,27 +626,8 @@ void GLWidget::initImagePlane(vector<QVector3D> &image_plane, vector<QVector3D> 
 }
 
 void GLWidget::initProjection(vector<QVector3D> object, vector<QVector3D> &projection, float focal_length,
-                    QVector4D center, QVector4D principle_point, QVector3D rotation)
+                    QVector4D center, QVector3D rotation)
 {
-    // orientation of projection
-    QMatrix4x4 rotation_matrix = rotate_x(rotation.x()) * rotate_y(rotation.y()) * rotate_z(rotation.z());
-
-    // base vector for 2D image plane
-    QVector3D v1 = QVector3D(1.0, 0.0, 0.0);
-    QVector3D v2 = QVector3D(0.0, 1.0, 0.0);
-    // rotate
-    v1 = rotation_matrix * v1;
-    v2 = rotation_matrix * v2;
-    // normalized base vectors (length 1)
-    // y1 * z2 - z1 * y2
-    float normalized_x = v1.y() * v2.z() - v1.z() * v2.y();
-    float normalized_y = v1.z() * v2.x() - v1.x() * v2.z();
-    float normalized_z = v1.x() * v2.y() - v1.y() - v2.z();
-
-    float w = normalized_x * principle_point.x() + normalized_y * principle_point.y() + normalized_z * principle_point.z();
-
-    QVector4D image_plane = QVector4D(normalized_x, normalized_y, normalized_z, w);
-
     // central projection of every vertex
     for (QVector3D vertex: object)
     {
@@ -652,41 +638,42 @@ void GLWidget::initProjection(vector<QVector3D> object, vector<QVector3D> &proje
 
 QVector3D GLWidget::centralProjection(float focal_length, QVector3D vertex, QVector3D center, QVector3D rotation)
 {
-
+    // transposed rotation matrix
     QMatrix4x4 rotation_matrix_t = (rotate_x(rotation.x()) * rotate_y(rotation.y()) * rotate_z(rotation.z())).transposed();
+    // rotation matrix
     QMatrix4x4 rotation_matrix = (rotate_x(rotation.x()) * rotate_y(rotation.y()) * rotate_z(rotation.z()));
 
-    // lines from projection/camera center to image plane
-    //calculate x
-    // rotation around x axes
-    float x_term_1 = rotation_matrix_t.column(0).x() * (vertex.x() - center.x());
-    float x_term_2 = rotation_matrix_t.column(1).x() * (vertex.y() - center.y());
-    float x_term_3 = rotation_matrix_t.column(2).x() * (vertex.z() - center.z());
+    //calculate x (distance from vertex to projection center / camera position) (2-41)
+    // for x rotation
+    float x_1 = rotation_matrix_t.column(0).x() * (vertex.x() - center.x());
+    float x_2 = rotation_matrix_t.column(1).x() * (vertex.y() - center.y());
+    float x_3 = rotation_matrix_t.column(2).x() * (vertex.z() - center.z());
 
-    // rotation around z axes
-    float x_term_4 = rotation_matrix_t.column(0).z() * (vertex.x() - center.x());
-    float x_term_5 = rotation_matrix_t.column(1).z() * (vertex.y() - center.y());
-    float x_term_6 = rotation_matrix_t.column(2).z() * (vertex.z() - center.z());
+    // for y rotation
+    float x_4 = rotation_matrix_t.column(0).z() * (vertex.x() - center.x());
+    float x_5 = rotation_matrix_t.column(1).z() * (vertex.y() - center.y());
+    float x_6 = rotation_matrix_t.column(2).z() * (vertex.z() - center.z());
 
-    float x = focal_length * ( (x_term_1 + x_term_2 + x_term_3) / (x_term_4 + x_term_5 + x_term_6));
+    // scale with focal distance
+    float x = focal_length * ((x_1 + x_2 + x_3) / (x_4 + x_5 + x_6));
 
-    // calculate y
-    float y_term_1 = rotation_matrix_t.column(0).y() * (vertex.x() - center.x());
-    float y_term_2 = rotation_matrix_t.column(1).y() * (vertex.y() - center.y());
-    float y_term_3 = rotation_matrix_t.column(2).y() * (vertex.z() - center.z());
+    // calculate y coordinates
+    float y_1 = rotation_matrix_t.column(0).y() * (vertex.x() - center.x());
+    float y_2 = rotation_matrix_t.column(1).y() * (vertex.y() - center.y());
+    float y_3 = rotation_matrix_t.column(2).y() * (vertex.z() - center.z());
 
-    float y_term_4 = rotation_matrix_t.column(0).z() * (vertex.x() - center.x());
-    float y_term_5 = rotation_matrix_t.column(1).z() * (vertex.y() - center.y());
-    float y_term_6 = rotation_matrix_t.column(2).z() * (vertex.z() - center.z());
+    float y_4 = rotation_matrix_t.column(0).z() * (vertex.x() - center.x());
+    float y_5 = rotation_matrix_t.column(1).z() * (vertex.y() - center.y());
+    float y_6 = rotation_matrix_t.column(2).z() * (vertex.z() - center.z());
 
-    float y = focal_length * ((y_term_1 + y_term_2 + y_term_3) / (y_term_4 + y_term_5 + y_term_6));
+    float y = focal_length * ((y_1 + y_2 + y_3) / (y_4 + y_5 + y_6));
 
     // calculate z
     float z = focal_length;
 
-    QVector3D result = QVector3D(x, y, z);
-    result = rotation_matrix * result;
+    QVector3D result = rotation_matrix * QVector3D(x, y, z);;
 
+    // translate back to projection center / camera position
     return QVector3D(result.x() + center.x(), result.y() + center.y(), result.z() + center.z());
 }
 
