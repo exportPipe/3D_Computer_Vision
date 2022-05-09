@@ -265,7 +265,7 @@ void GLWidget::exercise2()
 
     // camera
     QVector3D cam1_rotation = QVector3D (0, 0, 0);
-    QVector3D cam2_rotation = QVector3D(0, 2, 0);
+    QVector3D cam2_rotation = QVector3D(2, 0, 0);
 
 
     // perspective camera 1 with projection
@@ -770,8 +770,10 @@ void GLWidget::initReconstruction(std::vector<QVector3D> projection1, std::vecto
     int count = 0;
     while(count < (int) projection1.size())
     {
+        // x1' (tmp1) and x2' (tmp2) used for parallax x' = x1' - x2'
         QVector3D tmp1 = QVector3D(projection1[count].x() - cam1_pos.x(), projection1[count].y() - cam1_pos.y(), projection1[count].z() - cam1_pos.z());
         QVector3D tmp2 = QVector3D(projection2[count].x() - cam2_pos.x(), projection2[count].y() - cam2_pos.y(), projection2[count].z() - cam2_pos.z());
+        // §3 / 22
         float z = -focal_distance * ((cam1_pos.x() - cam2_pos.x()) / (tmp2.x() - tmp1.x()));
         float y = -z * (tmp1.y() / focal_distance);
         float x = -z * (tmp1.x() / focal_distance);
