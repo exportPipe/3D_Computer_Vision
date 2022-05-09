@@ -83,12 +83,7 @@ QMatrix4x4 rotate_x(float angle)
     float degrees = angle * M_PI / 180;
     float cos = cosf(degrees);
     float sin = sinf(degrees);
-    /**
-    QVector4D v1 = QVector4D(1, 0, 0, 0);
-    QVector4D v2 = QVector4D(sin, cos, 0, 0);
-    QVector4D v3 = QVector4D(0, 0, 1, 0);
-    QVector4D v4 = QVector4D(0, 0, 0, 1);
-    **/
+
     QVector4D v1 = QVector4D(1, 0, 0, 0);
     QVector4D v2 = QVector4D(0, cos, -sin, 0);
     QVector4D v3 = QVector4D(0, sin, cos, 0);
@@ -172,9 +167,13 @@ void GLWidget::paintGL()
     drawPointCloud();
     drawFrameAxis();
 
+    // exercise1();
+    exercise2();
 
+}
 
-
+void GLWidget::exercise1()
+{
     // Assignement 1, Part 1
     // Draw here your objects as in drawFrameAxis()
     vector<QVector3D> object1;
@@ -193,7 +192,6 @@ void GLWidget::paintGL()
 
 
 
-
     // Assignement 1, Part 2
     // Draw here your perspective camera model
     vector<QVector3D> camera_axes;
@@ -203,7 +201,7 @@ void GLWidget::paintGL()
     float image_plane_size = 2.5;
 
     // camera orientation
-    QVector3D camera_rotation = QVector3D(30, 0, 0);
+    QVector3D camera_rotation = QVector3D(0, 0, 0);
 
     // distance from camera position orthogonal to image plane
     QVector4D principle_point = getPrinciplePoint(focal_distance, camera_position, camera_rotation);
@@ -234,7 +232,87 @@ void GLWidget::paintGL()
     initProjectionLines(object1, projection_lines, camera_position);
     initProjectionLines(object2, projection_lines, camera_position);
     drawObject(projection_lines, blue);
+}
 
+
+void GLWidget::exercise2()
+{
+    QColor red = QColor(1.0f, 0.0f, 0.0f);
+    QColor green = QColor(0.0f, 1.0f, 0.0f);
+    QColor blue = QColor(0.0f, 0.0f, 1.0f);
+    QColor yellow = QColor(1.0f , 1.0f, 0.0f);
+    QColor white = QColor(1.0f, 1.0f, 1.0f);
+
+    // relevant world elements
+    vector<QVector3D> object_1;
+    vector<QVector3D> object_2;
+    vector<QVector3D> camera_axes;
+    vector<QVector3D> image_plane;
+    vector<QVector3D> image_plane_axes;
+    vector<QVector3D> projection_lines;
+    vector<QVector3D> cam1_object1_projection;
+    vector<QVector3D> cam1_object2_projection;
+    vector<QVector3D> cam2_object1_projection;
+    vector<QVector3D> cam2_object2_projection;
+
+    // init and draw objects
+    QVector4D object1_position = QVector4D(0.0, 0.0, 8.0, 1.0);
+    QVector4D object2_position = QVector4D(1.0, 1.0, 6.0, 1.0);
+    initCuboid(object_1, object1_position, 0.8, 0.0, 30.0, 0.0);
+    initCuboid(object_2, object2_position, 1.0, 30.0, 0.0, 0.0);
+    drawObject(object_1, green);
+    drawObject(object_2, yellow);
+
+    // camera
+    QVector3D cam1_rotation = QVector3D (0, 0, 0);
+    QVector3D cam2_rotation = QVector3D(0, 2, 0);
+
+
+    // perspective camera 1 with projection
+    QVector4D cam1_position = QVector4D(0.5, 1.0, 1.0, 1.0);
+    float cam1_focal_distance = 2.0;
+    float cam1_image_plane_size = 1.0;
+    QVector4D cam1_principle_point = getPrinciplePoint(cam1_focal_distance, cam1_position, cam1_rotation);
+    initPerspectiveCamera(camera_axes, cam1_position, cam1_rotation);
+    initImagePlane(image_plane, image_plane_axes,
+                   cam1_position, cam1_image_plane_size, cam1_focal_distance, cam1_rotation, cam1_principle_point);
+    drawObject(camera_axes, white);
+    drawObject(image_plane, red);
+    drawObject(image_plane_axes, red);
+    initProjection(object_1, cam1_object1_projection, cam1_focal_distance, cam1_position, cam1_rotation);
+    initProjection(object_2, cam1_object2_projection, cam1_focal_distance, cam1_position, cam1_rotation);
+    drawObject(cam1_object1_projection, green);
+    drawObject(cam1_object2_projection, yellow);
+    initProjectionLines(object_1, projection_lines, cam1_position);
+    initProjectionLines(object_2, projection_lines, cam1_position);
+    drawObject(projection_lines, blue);
+
+    // perspective camera 2 with projection
+    QVector4D cam2_position = QVector4D(2.5, 1.0, 1.0, 1.0);
+    float cam2_focal_distance = 2.0;
+    float cam2_image_plane_size = 1.0;
+    QVector4D cam2_principle_point = getPrinciplePoint(cam2_focal_distance, cam2_position, cam2_rotation);
+    initPerspectiveCamera(camera_axes, cam2_position, cam2_rotation);
+    initImagePlane(image_plane, image_plane_axes,
+                   cam2_position, cam2_image_plane_size, cam2_focal_distance, cam2_rotation, cam2_principle_point);
+    drawObject(camera_axes, white);
+    drawObject(image_plane, red);
+    drawObject(image_plane_axes, red);
+    initProjection(object_1, cam2_object1_projection, cam2_focal_distance, cam2_position, cam2_rotation);
+    initProjection(object_2, cam2_object2_projection, cam2_focal_distance, cam2_position, cam2_rotation);
+    drawObject(cam2_object1_projection, green);
+    drawObject(cam2_object2_projection, yellow);
+    initProjectionLines(object_1, projection_lines, cam2_position);
+    initProjectionLines(object_2, projection_lines, cam2_position);
+    drawObject(projection_lines, blue);
+
+    // perspective reconstruction
+    vector<QVector3D> object1_reconstructed;
+    vector<QVector3D> object2_reconstructed;
+    initReconstruction(cam1_object1_projection, cam2_object1_projection, object1_reconstructed, cam1_focal_distance, cam1_position.toVector3D(), cam2_position.toVector3D());
+    initReconstruction(cam1_object2_projection, cam2_object2_projection, object2_reconstructed, cam1_focal_distance, cam1_position.toVector3D(), cam2_position.toVector3D());
+    drawObject(object1_reconstructed, green);
+    drawObject(object2_reconstructed, yellow);
 }
 
 void GLWidget::drawFrameAxis()
@@ -683,5 +761,22 @@ void GLWidget::initProjectionLines(vector<QVector3D> object, vector<QVector3D> &
     {
         projection_lines.push_back(vertex);
         projection_lines.push_back(center.toVector3D());
+    }
+}
+
+void GLWidget::initReconstruction(std::vector<QVector3D> projection1, std::vector<QVector3D> projection2, std::vector<QVector3D> &reconstruction,
+                                  float focal_distance, QVector3D cam1_pos, QVector3D cam2_pos)
+{
+    int count = 0;
+    while(count < (int) projection1.size())
+    {
+        QVector3D tmp1 = QVector3D(projection1[count].x() - cam1_pos.x(), projection1[count].y() - cam1_pos.y(), projection1[count].z() - cam1_pos.z());
+        QVector3D tmp2 = QVector3D(projection2[count].x() - cam2_pos.x(), projection2[count].y() - cam2_pos.y(), projection2[count].z() - cam2_pos.z());
+        float z = -focal_distance * ((cam1_pos.x() - cam2_pos.x()) / (tmp2.x() - tmp1.x()));
+        float y = -z * (tmp1.y() / focal_distance);
+        float x = -z * (tmp1.x() / focal_distance);
+        QVector3D reconstructed_point = QVector3D(x + cam1_pos.x(), y + cam1_pos.y(), z + cam1_pos.z());
+        reconstruction.push_back(reconstructed_point);
+        count++;
     }
 }

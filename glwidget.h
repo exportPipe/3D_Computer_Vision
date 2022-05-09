@@ -95,4 +95,9 @@ private:
   QVector3D centralProjection(float focal_length, QVector3D vertex, QVector3D center, QVector3D rotation);
 
   void initProjectionLines(std::vector<QVector3D> object, std::vector<QVector3D> &projection_lines, QVector4D center);
+  void initReconstruction(std::vector<QVector3D> projection1, std::vector<QVector3D> projection2,
+                          std::vector<QVector3D> &reconstruction, float focal_distance, QVector3D cam1_pos, QVector3D cam2_pos);
+
+  void exercise1();
+  void exercise2();
 };
